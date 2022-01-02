@@ -1,6 +1,9 @@
 use log::warn;
 
-use crate::{AMediaCrypto, AMediaFormat, ANativeWindow, MediaFormat, MediaStatus, NativeWindow};
+use crate::{
+    AMediaCrypto, AMediaFormat, ANativeWindow, AudioFrame, Frame, MediaFormat, MediaStatus,
+    NativeWindow, SampleFormat, VideoFrame, ENCODING_PCM_16BIT, ENCODING_PCM_FLOAT,
+};
 use std::{
     ffi::{c_void, CString},
     marker::PhantomData,
@@ -607,7 +610,7 @@ impl CodecOutputBuffer<'_> {
         &self.format
     }
 
-    pub fn buffer_slice(&self) -> Option<&[u8]> {
+    fn buffer_slice(&self) -> Option<&[u8]> {
         if !self.using_buffers {
             return None;
         }
@@ -622,8 +625,94 @@ impl CodecOutputBuffer<'_> {
         }
     }
 
-    /// Returns audio samples if the buffer type is audio and None otherwise
-    pub fn audio_samples(&self) {}
+    /// Returns the frame contained in this buffer.
+    /// Can either be an audio frame or a video frame
+    pub fn frame(&self) -> Option<Frame> {
+        // Determine whether this is an audio or video frame.
+        // We can use the mime type to do this
+        let mime = self.format.get_string("mime")?;
+        let is_audio: bool;
+
+        // We don't know if we might get some weird mime types, so we check for both audio and video explicitly
+        if mime.contains("audio") {
+            is_audio = true;
+        } else if mime.contains("video") {
+            is_audio = false;
+        } else {
+            return None;
+        }
+
+        if is_audio {
+            // Fetch the PCM Encoding
+            let encoding = self.format.get_i32("pcm-encoding")? as usize;
+            let channels = self.format.get_i32("channels")?;
+
+            // Can't have invalid channels!
+            if channels <= 0 {
+                return None;
+            }
+
+            match encoding {
+                ENCODING_PCM_16BIT => {
+                    let slice = self.buffer_slice()?;
+                    let len = slice.len() / std::mem::size_of::<i16>();
+
+                    // Make sure this didn't yield a remainder
+                    if slice.len() % std::mem::size_of::<i16>() != 0 {
+                        warn!("Potentially wrong results ahead!");
+                    }
+
+                    // Transmute as an i16 slice
+                    let buffer = unsafe {
+                        let buffer = std::mem::transmute::<*const u8, *const i16>(slice.as_ptr());
+                        let raw = std::ptr::slice_from_raw_parts(buffer, len);
+
+                        &*raw
+                    };
+
+                    return Some(Frame::Audio(AudioFrame::new(
+                        SampleFormat::S16(buffer),
+                        channels as u32,
+                    )));
+                }
+                ENCODING_PCM_FLOAT => {
+                    let slice = self.buffer_slice()?;
+                    let len = slice.len() / std::mem::size_of::<f32>();
+
+                    // Make sure this didn't yield a remainder
+                    if slice.len() % std::mem::size_of::<f32>() != 0 {
+                        warn!("Potentially wrong results ahead!");
+                    }
+
+                    // Transmute as an i16 slice
+                    let buffer = unsafe {
+                        let buffer = std::mem::transmute::<*const u8, *const f32>(slice.as_ptr());
+                        let raw = std::ptr::slice_from_raw_parts(buffer, len);
+
+                        &*raw
+                    };
+
+                    return Some(Frame::Audio(AudioFrame::new(
+                        SampleFormat::F32(buffer),
+                        channels as u32,
+                    )));
+                }
+                _ => {
+                    // We only care about PCM-16 and Float types
+                    return None;
+                }
+            }
+        } else {
+            // We have a video frame! Do justice to it
+
+            // We have a surface buffer, so return a video frame with surface buffer for it
+            if !self.using_buffers {
+                return Some(Frame::Video(VideoFrame::Hardware));
+            } else {
+                unimplemented!();
+            }
+        }
+    }
 
     /// Set whether this buffer should render when it gets dropped.
     /// This only works for video decoder buffers with a surface attached

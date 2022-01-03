@@ -9,6 +9,7 @@ mod samples;
 use std::sync::{Arc, Mutex};
 
 pub use codec::*;
+use cpal::traits::DeviceTrait;
 pub use crypto::*;
 pub use error::*;
 pub use extractor::*;
@@ -33,6 +34,16 @@ pub extern "C" fn JNI_OnLoad(_vm: JavaVM, _version: i32) -> i32 {
 
 #[no_mangle]
 extern "C" fn process() {
+    let original = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        original(info);
+        error!("Panic: {}", info.to_string());
+        // std::process::abort();
+    }));
+
+    let pool: Arc<Mutex<Vec<i16>>> = Arc::new(Mutex::new(Vec::new()));
+    let other_pool = Arc::clone(&pool);
+
     use cpal::traits::HostTrait;
 
     let host = cpal::default_host();
@@ -43,6 +54,8 @@ extern "C" fn process() {
 
     let config = device.default_output_config().unwrap();
 
+    debug!("Config: {:?}", config);
+
     match config.sample_format() {
         cpal::SampleFormat::I16 => {
             debug!("Found I16");
@@ -52,24 +65,27 @@ extern "C" fn process() {
         }
     }
 
-    return;
+    let stream = device
+        .build_output_stream(
+            &config.config(),
+            move |data: &mut [i16], _: &cpal::OutputCallbackInfo| {},
+            move |err| {},
+        )
+        .unwrap();
 
-    let original = std::panic::take_hook();
-    std::panic::set_hook(Box::new(move |info| {
-        original(info);
-        error!("Panic: {}", info.to_string());
-        // std::process::abort();
-    }));
+    return;
 
     let mut extractor =
         MediaExtractor::from_url("/storage/emulated/0/Yahir Marca Me Lapiel 2.mp3").unwrap();
 
     debug!("Track count: {}", extractor.track_count());
 
+    let fmt = extractor.track_format(0).unwrap();
+
     let mut decoders = vec![];
 
     for i in 0..extractor.track_count() {
-        let format = extractor.track_format(i);
+        let format = extractor.track_format(i).unwrap();
         debug!("{}", format.to_string());
         let mime_type = format.get_string("mime").unwrap();
         let mut codec = MediaCodec::create_decoder(&mime_type).unwrap();
@@ -78,10 +94,6 @@ extern "C" fn process() {
         decoders.push(codec);
         extractor.select_track(i);
     }
-
-    let pool: Arc<Mutex<Vec<i16>>> = Arc::new(Mutex::new(Vec::new()));
-
-    let other_pool = Arc::clone(pool);
 
     while extractor.has_next() {
         // 1. Get the track index
@@ -116,11 +128,11 @@ extern "C" fn process() {
 
             if let Some(ref frame) = buffer.frame() {
                 match frame {
-                    Frame::Audio(value) => match value.format {
+                    Frame::Audio(value) => match value.format() {
                         SampleFormat::S16(buf) => {
                             let mut guard = pool.lock().unwrap();
                             // Resize this to make sure it accommodates the new data
-                            guard.extend(buf);
+                            guard.extend(*buf);
                         }
                         SampleFormat::F32(_) => {}
                     },
@@ -143,5 +155,5 @@ fn main() {
         .attach_current_thread_as_daemon()
         .unwrap();
 
-    process();
+    // process();
 }

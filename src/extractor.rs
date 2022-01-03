@@ -108,10 +108,14 @@ impl MediaExtractor {
         unsafe { AMediaExtractor_getSampleTrackIndex(self.inner) }
     }
 
-    pub fn track_format(&self, index: usize) -> MediaFormat {
+    pub fn track_format(&self, index: usize) -> Option<MediaFormat> {
         unsafe {
+            if self.track_count() >= index {
+                return None;
+            }
+            
             let fmt = AMediaExtractor_getTrackFormat(self.inner, index);
-            MediaFormat::from_raw(fmt)
+            Some(MediaFormat::from_raw(fmt))
         }
     }
 

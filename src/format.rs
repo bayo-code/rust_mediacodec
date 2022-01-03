@@ -207,6 +207,22 @@ impl MediaFormat {
         value
     }
 
+    pub fn is_audio(&self) -> bool {
+        if let Some(mime) = self.get_string("mime") {
+            return mime.contains("audio");
+        }
+
+        false
+    }
+
+    pub fn is_video(&self) -> bool {
+        if let Some(mime) = self.get_string("mime") {
+            return mime.contains("video");
+        }
+
+        false
+    }
+
     #[cfg(feature = "api28")]
     pub fn set_f64(&mut self, name: &str, value: f64) -> bool {
         let name = CString::new(name).unwrap();

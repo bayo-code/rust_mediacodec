@@ -110,10 +110,11 @@ impl MediaExtractor {
 
     pub fn track_format(&self, index: usize) -> Option<MediaFormat> {
         unsafe {
-            if self.track_count() >= index {
+            if self.track_count() <= index {
+                debug!("Invalid track index {index}");
                 return None;
             }
-            
+
             let fmt = AMediaExtractor_getTrackFormat(self.inner, index);
             Some(MediaFormat::from_raw(fmt))
         }
@@ -140,26 +141,23 @@ impl MediaExtractor {
     }
 
     /// Read a packet into `buffer` and advance the extractor
+    /// Returns true if there's still more data to read
     pub fn read_next(&mut self, buffer: &mut CodecInputBuffer) -> bool {
         unsafe {
-            // debug!(
-            //     "Writing to buffer {:p} with size: {}",
-            //     buffer.buffer, buffer.size
-            // );
+            if !self.has_next {
+                return false;
+            }
+
             let count = AMediaExtractor_readSampleData(self.inner, buffer.buffer, buffer.size);
-
-            // debug!("Write count: {count}, flags: {}", self.sample_flags());
-
             if count > 0 {
                 buffer.set_write_size(count as usize);
                 buffer.set_time(self.sample_time() as u64);
-                buffer.set_flags(self.sample_flags());
-                // TODO: Use the return value???
-                self.has_next = AMediaExtractor_advance(self.inner);
-                return true;
             }
+            buffer.set_flags(self.sample_flags());
 
-            false
+            self.has_next = AMediaExtractor_advance(self.inner);
+
+            self.has_next
         }
     }
 

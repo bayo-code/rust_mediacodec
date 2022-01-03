@@ -656,7 +656,6 @@ impl CodecOutputBuffer<'_> {
 
             match encoding as usize {
                 ENCODING_PCM_16BIT => {
-                    debug!("Encoding is 16-bit!");
                     let slice = self.buffer_slice()?;
                     let len = slice.len() / std::mem::size_of::<i16>();
 
@@ -767,7 +766,6 @@ impl<'a> MediaCodec<'a> {
             let codec = AMediaCodec_createDecoderByType(mime_type.as_ptr());
 
             if codec.is_null() {
-                warn!("Codec is null: {codec:p}");
                 return None;
             }
 

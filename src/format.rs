@@ -160,7 +160,8 @@ impl MediaFormat {
 
         unsafe {
             let mut v = 0;
-            if AMediaFormat_getInt32(self.inner, name.as_ptr().cast(), &mut v) {
+            let name = CString::new(name).unwrap();
+            if AMediaFormat_getInt32(self.inner, name.as_ptr(), &mut v) {
                 value = Some(v);
             }
         }

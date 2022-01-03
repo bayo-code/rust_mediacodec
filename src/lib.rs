@@ -6,6 +6,8 @@ mod format;
 mod native_window;
 mod samples;
 
+use std::sync::{Arc, Mutex};
+
 pub use codec::*;
 pub use crypto::*;
 pub use error::*;
@@ -27,8 +29,31 @@ pub extern "C" fn JNI_OnLoad(_vm: JavaVM, _version: i32) -> i32 {
     return JNI_VERSION_1_6;
 }
 
+// Java_tech_smallwonder_mydiary_MainActivity_process
+
 #[no_mangle]
-extern "C" fn Java_tech_smallwonder_mydiary_MainActivity_process(_: JNIEnv, _: JObject) {
+extern "C" fn process() {
+    use cpal::traits::HostTrait;
+
+    let host = cpal::default_host();
+
+    let device = host
+        .default_output_device()
+        .expect("failed to find output device");
+
+    let config = device.default_output_config().unwrap();
+
+    match config.sample_format() {
+        cpal::SampleFormat::I16 => {
+            debug!("Found I16");
+        }
+        _ => {
+            debug!("Some other audio fmt!");
+        }
+    }
+
+    return;
+
     let original = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         original(info);
@@ -54,6 +79,10 @@ extern "C" fn Java_tech_smallwonder_mydiary_MainActivity_process(_: JNIEnv, _: J
         extractor.select_track(i);
     }
 
+    let pool: Arc<Mutex<Vec<i16>>> = Arc::new(Mutex::new(Vec::new()));
+
+    let other_pool = Arc::clone(pool);
+
     while extractor.has_next() {
         // 1. Get the track index
         let index = extractor.track_index();
@@ -66,9 +95,10 @@ extern "C" fn Java_tech_smallwonder_mydiary_MainActivity_process(_: JNIEnv, _: J
 
         // Fetch the codec's input buffer
         while let Ok(mut buffer) = codec.dequeue_input() {
-            debug!("Got input buffer with index: {}", buffer.index());
+            // debug!("Got input buffer with index: {}", buffer.index());
             if !extractor.read_next(&mut buffer) {
                 debug!("MediaExtractor.read_next() returned false!");
+                break; // VERY IMPORTANT, there's nothing else to DO!!!
             }
 
             // Hopefully, when the buffer gets dropped (here), the buffer will be queued back to MediaCodec
@@ -78,12 +108,40 @@ extern "C" fn Java_tech_smallwonder_mydiary_MainActivity_process(_: JNIEnv, _: J
         // Check for output
         let output_fmt = codec.output_format().unwrap();
         while let Ok(mut buffer) = codec.dequeue_output() {
-            debug!("Got output buffer with index: {}", buffer.index());
+            // debug!("Got output buffer with index: {}", buffer.index());
             // Normally, we'd do this for video codecs we have used surfaces for
             let info = buffer.info();
-            debug!("Output buffer info: {info:?}");
+            // debug!("Output buffer info: {info:?}");
             debug!("Output format: {}", output_fmt.to_string());
+
+            if let Some(ref frame) = buffer.frame() {
+                match frame {
+                    Frame::Audio(value) => match value.format {
+                        SampleFormat::S16(buf) => {
+                            let mut guard = pool.lock().unwrap();
+                            // Resize this to make sure it accommodates the new data
+                            guard.extend(buf);
+                        }
+                        SampleFormat::F32(_) => {}
+                    },
+                    Frame::Video(_) => todo!(),
+                }
+            }
+
             buffer.set_render(true);
         }
     }
+}
+
+#[ndk_glue::main(backtrace = "on", logger(level = "debug", tag = "rust_mediacodec"))]
+fn main() {
+    let activity = ndk_glue::native_activity();
+    javavm::set_jvm(Some(unsafe { JavaVM::from_raw(activity.vm()) }.unwrap()));
+
+    javavm::jvm()
+        .unwrap()
+        .attach_current_thread_as_daemon()
+        .unwrap();
+
+    process();
 }

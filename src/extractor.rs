@@ -138,11 +138,13 @@ impl MediaExtractor {
     /// Read a packet into `buffer` and advance the extractor
     pub fn read_next(&mut self, buffer: &mut CodecInputBuffer) -> bool {
         unsafe {
-            debug!(
-                "Writing to buffer {:p} with size: {}",
-                buffer.buffer, buffer.size
-            );
+            // debug!(
+            //     "Writing to buffer {:p} with size: {}",
+            //     buffer.buffer, buffer.size
+            // );
             let count = AMediaExtractor_readSampleData(self.inner, buffer.buffer, buffer.size);
+
+            // debug!("Write count: {count}, flags: {}", self.sample_flags());
 
             if count > 0 {
                 buffer.set_write_size(count as usize);

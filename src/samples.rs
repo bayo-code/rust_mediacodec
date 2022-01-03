@@ -1,4 +1,5 @@
 /// Represents a codec frame (either audio or video)
+#[derive(Debug)]
 pub enum Frame<'a> {
     Audio(AudioFrame<'a>),
     Video(VideoFrame<'a>),
@@ -8,6 +9,7 @@ pub const ENCODING_PCM_16BIT: usize = 2;
 pub const ENCODING_PCM_FLOAT: usize = 4;
 
 /// Represents an audio sample format, and contains the samples buffer
+#[derive(Debug)]
 pub enum SampleFormat<'a> {
     S16(&'a [i16]),
     F32(&'a [f32]),
@@ -37,6 +39,7 @@ impl SampleFormat<'_> {
 }
 
 /// Represents an audio frame, with sample format and channels
+#[derive(Debug)]
 pub struct AudioFrame<'a> {
     format: SampleFormat<'a>,
     channels: u32,
@@ -64,6 +67,7 @@ impl<'a> AudioFrame<'a> {
     }
 }
 
+#[derive(Debug)]
 pub enum VideoFrame<'a> {
     /// Represens a hardware video frame (stored in a NativeWindow, so it cannot be accessed)
     ///
@@ -74,6 +78,7 @@ pub enum VideoFrame<'a> {
 }
 
 /// A raw video frame with pixel format and a byte buffer to read the data
+#[derive(Debug)]
 pub struct RawVideoFrame<'a> {
     buffer: &'a [u8],
 }

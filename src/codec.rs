@@ -1,4 +1,4 @@
-use log::warn;
+use log::{debug, warn};
 
 use crate::{
     AMediaCrypto, AMediaFormat, ANativeWindow, AudioFrame, Frame, MediaFormat, MediaStatus,
@@ -639,21 +639,24 @@ impl CodecOutputBuffer<'_> {
         } else if mime.contains("video") {
             is_audio = false;
         } else {
+            debug!("Mime is not a valid one!");
             return None;
         }
 
         if is_audio {
             // Fetch the PCM Encoding
-            let encoding = self.format.get_i32("pcm-encoding")? as usize;
-            let channels = self.format.get_i32("channels")?;
+            let encoding = self.format.get_i32("pcm-encoding")?;
+            let channels = self.format.get_i32("channel-count")?;
 
             // Can't have invalid channels!
             if channels <= 0 {
+                debug!("Channels <= 0!");
                 return None;
             }
 
-            match encoding {
+            match encoding as usize {
                 ENCODING_PCM_16BIT => {
+                    debug!("Encoding is 16-bit!");
                     let slice = self.buffer_slice()?;
                     let len = slice.len() / std::mem::size_of::<i16>();
 

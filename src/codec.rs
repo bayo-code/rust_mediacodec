@@ -486,6 +486,8 @@ extern "C" {
 }
 // FFI FUNCTIONS END
 
+/// This represents a buffer returned by mediacodec's input
+/// This buffer should be filled with input data depending on whether the codec is an encoder or decoder
 pub struct CodecInputBuffer<'a> {
     pub(crate) _marker: PhantomData<&'a (*mut u8, core::marker::PhantomPinned)>,
     pub(crate) buffer: *mut u8,
@@ -498,6 +500,7 @@ pub struct CodecInputBuffer<'a> {
 }
 
 impl CodecInputBuffer<'_> {
+    /// Creates a new Codec Input Buffer from the parameters
     fn new(codec: *mut AMediaCodec, index: usize, buffer: *mut u8, size: usize) -> Self {
         Self {
             _marker: PhantomData,
@@ -511,34 +514,45 @@ impl CodecInputBuffer<'_> {
         }
     }
 
+    /// Returns this buffer's index. There's not much you can do with this
     pub fn index(&self) -> usize {
         self.index
     }
 
+    /// The size (in bytes) of this buffer
     pub fn size(&self) -> usize {
         self.size
     }
 
+    /// The presentation time of this buffer. If you did not set this yet, it will be zero
     pub fn time(&self) -> u64 {
         self.time
     }
 
+    /// The size of data written into this buffer
     pub fn write_size(&self) -> usize {
         self.write_size
     }
 
+    /// The buffer itself. It is returned as a mutable pointer
+    ///
+    /// The reason for this is that I find data copying primitives provided by Rust to be confusing and not performant,
+    /// so I would recommend you just use the `copy_nonoverlapping` function to copy data to this pointer
     pub fn buffer(&self) -> (*mut u8, usize) {
         (self.buffer, self.size)
     }
 
+    /// Set the presentation time of this buffer
     pub fn set_time(&mut self, time: u64) {
         self.time = time;
     }
 
+    /// Set this buffer's flags
     pub fn set_flags(&mut self, flags: u32) {
         self.flags = flags;
     }
 
+    /// Set the size of bytes written to this buffer
     pub fn set_write_size(&mut self, write_size: usize) {
         self.write_size = write_size;
     }
@@ -559,6 +573,14 @@ impl Drop for CodecInputBuffer<'_> {
     }
 }
 
+unsafe impl Send for CodecInputBuffer<'_> {}
+unsafe impl Sync for CodecInputBuffer<'_> {}
+
+/// Represents a mediacodec output buffer
+///
+/// For decoders, this is a raw frame.
+///
+/// For encoders, this is an encoded packet
 pub struct CodecOutputBuffer<'a> {
     _marker: PhantomData<&'a (*mut u8, core::marker::PhantomPinned)>,
     codec: *mut AMediaCodec,
@@ -572,6 +594,7 @@ pub struct CodecOutputBuffer<'a> {
 }
 
 impl CodecOutputBuffer<'_> {
+    /// Create a new codec output buffer from the parameters
     fn new(
         codec: *mut AMediaCodec,
         info: BufferInfo,
@@ -594,22 +617,29 @@ impl CodecOutputBuffer<'_> {
         }
     }
 
+    /// Returns the buffer information
     pub fn info(&self) -> &BufferInfo {
         &self.info
     }
 
+    /// Returns the index of the codec buffer
     pub fn index(&self) -> usize {
         self.index
     }
 
+    /// Whether we're returning raw buffers or using hardware buffers
+    ///
+    /// This only applies to video frames and a decoder
     pub fn using_buffers(&self) -> bool {
         self.using_buffers
     }
 
+    /// The [MediaFormat](MediaFormat) associated with this buffer
     pub fn format(&self) -> &MediaFormat {
         &self.format
     }
 
+    /// Returns the buffer as a u8 slice
     fn buffer_slice(&self) -> Option<&[u8]> {
         if !self.using_buffers {
             return None;
@@ -731,6 +761,12 @@ impl Drop for CodecOutputBuffer<'_> {
     }
 }
 
+unsafe impl Send for CodecOutputBuffer<'_> {}
+unsafe impl Sync for CodecOutputBuffer<'_> {}
+
+/// The MediaCodec structure itself.
+///
+/// Represents either a decoder or an encoder
 #[derive(Debug)]
 pub struct MediaCodec<'a> {
     inner: *mut AMediaCodec,
@@ -739,6 +775,7 @@ pub struct MediaCodec<'a> {
 }
 
 impl<'a> MediaCodec<'a> {
+    /// Creates a MediaCodec instance from raw pointer
     fn from_ptr(ptr: *mut AMediaCodec) -> Self {
         Self {
             inner: ptr,
@@ -747,6 +784,7 @@ impl<'a> MediaCodec<'a> {
         }
     }
 
+    /// Creates a codec using its name
     pub fn new(name: &str) -> Option<Self> {
         unsafe {
             let name = CString::new(name).unwrap();
@@ -760,6 +798,7 @@ impl<'a> MediaCodec<'a> {
         }
     }
 
+    /// Creates a decoder using a specific mime type
     pub fn create_decoder(mime_type: &str) -> Option<Self> {
         unsafe {
             let mime_type = CString::new(mime_type).unwrap();
@@ -773,6 +812,7 @@ impl<'a> MediaCodec<'a> {
         }
     }
 
+    /// Creates an encoder using a specific mime type
     pub fn create_encoder(mime_type: &str) -> Option<Self> {
         unsafe {
             let mime_type = CString::new(mime_type).unwrap();
@@ -786,6 +826,7 @@ impl<'a> MediaCodec<'a> {
         }
     }
 
+    /// Initializes the codec with the parameters. This must be called before you can start the codec
     pub fn init(
         &mut self,
         format: &MediaFormat,
@@ -814,6 +855,9 @@ impl<'a> MediaCodec<'a> {
         }
     }
 
+    /// Starts the codec for processing.
+    ///
+    /// This must be called only after the codec has been initialized
     pub fn start(&mut self) -> Result<(), MediaStatus> {
         unsafe { MediaStatus::make_result(AMediaCodec_start(self.inner)).map(|_value| ()) }
     }
@@ -832,6 +876,7 @@ impl<'a> MediaCodec<'a> {
         unsafe { MediaStatus::make_result(AMediaCodec_flush(self.inner)).map(|_| ()) }
     }
 
+    /// Returns the output format of this codec (if we can find one)
     pub fn output_format(&self) -> Option<MediaFormat> {
         unsafe {
             let format = AMediaCodec_getOutputFormat(self.inner);
@@ -843,6 +888,8 @@ impl<'a> MediaCodec<'a> {
         }
     }
 
+    /// Sets the codec output surface. This will only work if the codec has been initialized with an output surface
+    /// before starting
     pub fn set_output_surface(&mut self, window: NativeWindow) -> bool {
         if self.using_buffers {
             return false;
@@ -854,6 +901,7 @@ impl<'a> MediaCodec<'a> {
         }
     }
 
+    /// Get an input buffer from mediacodec
     pub fn dequeue_input(&mut self) -> Result<CodecInputBuffer, MediaStatus> {
         unsafe {
             // 100us wait time is not too much, right?
@@ -879,6 +927,7 @@ impl<'a> MediaCodec<'a> {
         }
     }
 
+    /// Get an output buffer from mediacodec
     pub fn dequeue_output(&mut self) -> Result<CodecOutputBuffer, MediaStatus> {
         unsafe {
             let mut info = BufferInfo::default();

@@ -2,11 +2,26 @@
 name = "mediacodec"
 version = "0.1.0"
 edition = "2021"
+readme = "README.md"
+description = "Rust bindings to MediaCodec, with an easy-to-use API"
+repository = "https://github.com/hardebayho/rust_mediacodec"
+license = "MIT"
+keywords = ["bindings", "multimedia", "mediacodec", "codec", "android"]
+categories = ["api-bindings", "encoding", "multimedia", "multimedia::audio", "multimedia::video"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
 name = "mediacodec"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "demuxing"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "decoding"
 crate-type = ["cdylib"]
 
 [dependencies]

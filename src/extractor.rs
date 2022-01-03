@@ -72,6 +72,7 @@ extern "C" {
     fn AMediaExtractor_advance(extractor: *mut AMediaExtractor) -> bool;
 }
 
+/// MediaExtractor is a demuxer that opens a file or resource and demuxes the data to hand over to MediaCodec
 #[derive(Debug)]
 pub struct MediaExtractor {
     inner: *mut AMediaExtractor,
@@ -79,12 +80,15 @@ pub struct MediaExtractor {
 }
 
 impl MediaExtractor {
+    /// Creates a new MediaExtractor
     fn new() -> Self {
         Self {
             inner: unsafe { AMediaExtractor_new() },
             has_next: false,
         }
     }
+
+    /// Creates a MediaExtractor with data source set to a specific URL
     pub fn from_url(path: &str) -> Result<Self, MediaStatus> {
         unsafe {
             let mut me = Self::new();
@@ -100,14 +104,19 @@ impl MediaExtractor {
         }
     }
 
+    /// Returns the number of tracks found by MediaExtractor
     pub fn track_count(&self) -> usize {
         unsafe { AMediaExtractor_getTrackCount(self.inner) }
     }
 
+    /// Returns the track index of the current packet to be retrieved by MediaExtractor
     pub fn track_index(&self) -> i32 {
         unsafe { AMediaExtractor_getSampleTrackIndex(self.inner) }
     }
 
+    /// Returns the MediaFormat containing the parameters for this track index.
+    ///
+    /// The format can be used to create and initialize MediaCodec
     pub fn track_format(&self, index: usize) -> Option<MediaFormat> {
         unsafe {
             if self.track_count() <= index {
@@ -120,22 +129,26 @@ impl MediaExtractor {
         }
     }
 
+    /// Select this track to be demuxed by MediaExtractor
     pub fn select_track(&mut self, index: usize) {
         unsafe {
             AMediaExtractor_selectTrack(self.inner, index);
         }
     }
 
+    /// Unselect this track to be demuxed by MediaExtractor
     pub fn unselect_track(&mut self, index: usize) {
         unsafe {
             AMediaExtractor_unselectTrack(self.inner, index);
         }
     }
 
+    /// Returns the sample flags for the current packet to be returned
     pub fn sample_flags(&self) -> u32 {
         unsafe { AMediaExtractor_getSampleFlags(self.inner) }
     }
 
+    /// Returns the time for the current packet to be returned
     pub fn sample_time(&self) -> i64 {
         unsafe { AMediaExtractor_getSampleTime(self.inner) }
     }
@@ -161,6 +174,7 @@ impl MediaExtractor {
         }
     }
 
+    /// Returns whether MediaExtractor still has packets to read
     pub fn has_next(&self) -> bool {
         self.has_next
     }
@@ -176,3 +190,4 @@ impl Drop for MediaExtractor {
 }
 
 unsafe impl Send for MediaExtractor {}
+unsafe impl Sync for MediaExtractor {}

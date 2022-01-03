@@ -129,16 +129,19 @@ extern "C" {
     fn AMediaFormat_copy(to: *mut AMediaFormat, from: *mut AMediaFormat) -> isize;
 }
 
+/// This structure stores data in key-value pairs for use in MediaCodec and other places in the NDK
 #[derive(Debug)]
 pub struct MediaFormat {
     pub(crate) inner: *mut AMediaFormat,
 }
 
 impl MediaFormat {
+    /// Construct a MediaFormat from a raw pointer
     pub fn from_raw(inner: *mut AMediaFormat) -> Self {
         Self { inner }
     }
 
+    /// Create a new MediaFormat
     pub fn new() -> Option<Self> {
         unsafe {
             let inner = AMediaFormat_new();
@@ -151,10 +154,12 @@ impl MediaFormat {
         }
     }
 
+    /// Set a 32-bit integer value
     pub fn set_i32(&mut self, name: &str, value: i32) -> bool {
         unsafe { AMediaFormat_setInt32(self.inner, name.as_ptr().cast(), value) }
     }
 
+    /// Get a 32-bit integer value
     pub fn get_i32(&self, name: &str) -> Option<i32> {
         let mut value = None;
 
@@ -169,11 +174,13 @@ impl MediaFormat {
         value
     }
 
+    /// Set a 64-bit integer value
     pub fn set_i64(&mut self, name: &str, value: i64) -> bool {
         let name = CString::new(name).unwrap();
         unsafe { AMediaFormat_setInt64(self.inner, name.as_ptr(), value) }
     }
 
+    /// Get a 64-bit integer value
     pub fn get_i64(&self, name: &str) -> Option<i64> {
         let mut value = None;
 
@@ -188,11 +195,13 @@ impl MediaFormat {
         value
     }
 
+    /// Set a 32-bit floating-point value
     pub fn set_f32(&mut self, name: &str, value: f32) -> bool {
         let name = CString::new(name).unwrap();
         unsafe { AMediaFormat_setFloat(self.inner, name.as_ptr(), value) }
     }
 
+    /// Get a 32-bit floating-point value
     pub fn get_f32(&self, name: &str) -> Option<f32> {
         let mut value = None;
 
@@ -207,6 +216,7 @@ impl MediaFormat {
         value
     }
 
+    /// Convenience function to check whether the mime type is audio
     pub fn is_audio(&self) -> bool {
         if let Some(mime) = self.get_string("mime") {
             return mime.contains("audio");
@@ -215,6 +225,7 @@ impl MediaFormat {
         false
     }
 
+    /// Convenience function to check whether the mime type is video
     pub fn is_video(&self) -> bool {
         if let Some(mime) = self.get_string("mime") {
             return mime.contains("video");
@@ -223,12 +234,14 @@ impl MediaFormat {
         false
     }
 
+    /// Set a 64-bit floating point value
     #[cfg(feature = "api28")]
     pub fn set_f64(&mut self, name: &str, value: f64) -> bool {
         let name = CString::new(name).unwrap();
         unsafe { AMediaFormat_setDouble(self.inner, name.as_ptr(), value) }
     }
 
+    /// Get a 64-bit floating-point value
     #[cfg(feature = "api28")]
     pub fn get_f64(&self, name: &str) -> Option<f64> {
         let value = None;
@@ -244,12 +257,14 @@ impl MediaFormat {
         value
     }
 
+    /// Set a string value
     pub fn set_string(&mut self, name: &str, value: &str) -> bool {
         let name = CString::new(name).unwrap();
         let value = CString::new(value).unwrap();
         unsafe { AMediaFormat_setString(self.inner, name.as_ptr(), value.as_ptr()) }
     }
 
+    /// Get a string value
     pub fn get_string(&self, name: &str) -> Option<String> {
         let mut value = None;
 
@@ -264,6 +279,7 @@ impl MediaFormat {
         value
     }
 
+    /// Clear the entire buffer
     #[cfg(feature = "api29")]
     pub fn clear(&mut self) {
         unsafe {
@@ -294,3 +310,4 @@ impl Drop for MediaFormat {
 }
 
 unsafe impl Send for MediaFormat {}
+unsafe impl Sync for MediaFormat {}

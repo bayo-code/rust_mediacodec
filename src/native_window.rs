@@ -2,12 +2,14 @@ use std::{ffi::c_void, ops::BitOr, ptr::null_mut};
 
 use jni::{objects::JObject, JNIEnv};
 
+/// Represents an image buffer (or a Surface in Java)
 #[repr(C)]
 pub struct ANativeWindow {
     _data: [u8; 0],
     _marker: core::marker::PhantomData<(*mut u8, core::marker::PhantomPinned)>,
 }
 
+/// Window Formats
 #[derive(Debug, Clone, Copy)]
 pub enum NativeWindowFormat {
     /// 32 bits per pixel (8 bits per channel)

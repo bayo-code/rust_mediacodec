@@ -2,7 +2,8 @@
 //!
 //! Examples:
 //! ### Decoding
-//! ```rust,norun
+//! ```edition2021
+//!
 //! # #[no_mangle]
 //! # extern "C" fn process() {
 //!     use mediacodec::{Frame, MediaCodec, MediaExtractor, SampleFormat, VideoFrame};
@@ -81,7 +82,7 @@
 //! ```
 //!
 //! ### Demuxing
-//! ```rust,norun
+//! ```edition2021
 //! use log::debug;
 //! use mediacodec::{Frame, MediaExtractor, SampleFormat, VideoFrame};
 //!

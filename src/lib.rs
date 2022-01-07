@@ -112,6 +112,7 @@
 //! # }
 
 //! ```
+#![cfg(os = "android")]
 
 mod codec;
 mod crypto;

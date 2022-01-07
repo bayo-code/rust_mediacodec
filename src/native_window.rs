@@ -4,6 +4,7 @@ use jni::{objects::JObject, JNIEnv};
 
 /// Represents an image buffer (or a Surface in Java)
 #[repr(C)]
+#[derive(Debug)]
 pub struct ANativeWindow {
     _data: [u8; 0],
     _marker: core::marker::PhantomData<(*mut u8, core::marker::PhantomPinned)>,
@@ -75,6 +76,7 @@ impl BitOr for NativeWindowTransform {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct NativeWindowBuffer {
     pub width: i32,
     pub height: i32,
@@ -159,6 +161,7 @@ extern "C" {
 
 // Functions end
 
+#[derive(Debug)]
 pub struct NativeWindow {
     pub(crate) inner: *mut ANativeWindow,
 }

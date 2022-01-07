@@ -201,7 +201,7 @@ extern "C" {
     /// Delete the codec and free its resources
     /// <hr />
     /// Since: API 21
-    fn AMediaCodec_delete(codec: *mut AMediaCodec) -> isize;
+    fn AMediaCodec_delete(codec: *mut AMediaCodec) -> MediaStatus;
 
     /// Configure the codec. For decoding, you would typically get the format from an extractor
     /// <hr />
@@ -212,22 +212,22 @@ extern "C" {
         surface: *mut ANativeWindow,
         crypto: *mut AMediaCrypto,
         flags: u32,
-    ) -> isize;
+    ) -> MediaStatus;
 
     /// Start the codec. A codec must be configured before it can be started, and must be started before buffers can be sent to it.
     /// <hr />
     /// Since: API 21
-    fn AMediaCodec_start(codec: *mut AMediaCodec) -> isize;
+    fn AMediaCodec_start(codec: *mut AMediaCodec) -> MediaStatus;
 
     /// Stop the codec.
     /// <hr />
     /// Since: API 21
-    fn AMediaCodec_stop(codec: *mut AMediaCodec) -> isize;
+    fn AMediaCodec_stop(codec: *mut AMediaCodec) -> MediaStatus;
 
     /// Flush the codec's input and output. All indices previously returned from calls to `AMediaCodec_dequeueInputBuffer` and `AMediaCodec_dequeueOutpuBuffer` become invalid.
     /// <hr />
     /// Since: API 21
-    fn AMediaCodec_flush(codec: *mut AMediaCodec) -> isize;
+    fn AMediaCodec_flush(codec: *mut AMediaCodec) -> MediaStatus;
 
     /// Get an input buffer. The specified buffer index must have been previously obtained from dequeueInputBuffer, and not yet queued.
     /// <hr />
@@ -262,7 +262,7 @@ extern "C" {
         size: usize,
         time: u64,
         flags: u32,
-    ) -> isize;
+    ) -> MediaStatus;
 
     /// Send the specified buffer to the codec for processing
     /// <hr />
@@ -274,7 +274,7 @@ extern "C" {
         info: *mut AMediaCodecCryptoInfo,
         time: u64,
         flags: u32,
-    ) -> isize;
+    ) -> MediaStatus;
 
     /// Get the index of the next available buffer of processed data
     /// <hr />
@@ -298,13 +298,16 @@ extern "C" {
         codec: *mut AMediaCodec,
         index: usize,
         render: bool,
-    ) -> isize;
+    ) -> MediaStatus;
 
     /// Dynamically sets the output surface of a codec.
     /// This can only be used if the codec was configured with an output surface. The new output surface should have a compatible usage type to the original output surface. E.g. Codecs may not support switching from a SurfaceTexture (GPU readable) output to ImageReader (software readable) output.
     /// <hr />
     // Since: API 21
-    fn AMediaCodec_setOutputSurface(codec: *mut AMediaCodec, surface: *mut ANativeWindow) -> isize;
+    fn AMediaCodec_setOutputSurface(
+        codec: *mut AMediaCodec,
+        surface: *mut ANativeWindow,
+    ) -> MediaStatus;
 
     /// If you are done with a buffer, use this call to update its surface timestamp and return it to the codec to render it to the output surface. If you have not specified an output surface when configuring this video codec, this call will simply return the buffer to the codec.
     /// <hr />
@@ -327,7 +330,7 @@ extern "C" {
     fn AMediaCodec_createInputSurface(
         codec: *mut AMediaCodec,
         surface: *mut *mut ANativeWindow,
-    ) -> isize;
+    ) -> MediaStatus;
 
     /// Creates a persistent surface that can be used as the input to encoder.
     ///
@@ -338,7 +341,7 @@ extern "C" {
     ///<hr />
     /// Since: API 26
     #[cfg(feature = "api26")]
-    fn AMediaCodec_createPersistentInputSurface(surface: *mut *mut ANativeWindow) -> isize;
+    fn AMediaCodec_createPersistentInputSurface(surface: *mut *mut ANativeWindow) -> MediaStatus;
 
     /// Set a persistent surface that can be used as input to encoder, in place of input buffers
     ///
@@ -348,7 +351,10 @@ extern "C" {
     /// <hr />
     /// Since: API 26
     #[cfg(feature = "api26")]
-    fn AMediaCodec_setInputSurface(codec: *mut AMediaCodec, surface: *mut ANativeWindow) -> isize;
+    fn AMediaCodec_setInputSurface(
+        codec: *mut AMediaCodec,
+        surface: *mut ANativeWindow,
+    ) -> MediaStatus;
 
     /// Signal additional parameters to the codec instance.
     ///
@@ -359,7 +365,10 @@ extern "C" {
     /// <hr />
     /// Since: API 26
     #[cfg(feature = "api26")]
-    fn AMediaCodec_setParameters(codec: *mut AMediaCodec, format: *const AMediaFormat) -> isize;
+    fn AMediaCodec_setParameters(
+        codec: *mut AMediaCodec,
+        format: *const AMediaFormat,
+    ) -> MediaStatus;
 
     /// Signals end-of-stream on input. Equivalent to submitting an empty buffer with `AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM` set.
     ///
@@ -371,7 +380,7 @@ extern "C" {
     /// <hr />
     /// Since: API 26
     #[cfg(feature = "api26")]
-    fn AMediaCodec_signalEndOfInputStream(codec: *mut AMediaCodec) -> isize;
+    fn AMediaCodec_signalEndOfInputStream(codec: *mut AMediaCodec) -> MediaStatus;
 
     /// Get format of the buffer. The specified buffer index must have been previously obtained from `dequeueOutputBuffer`.
     /// The caller must free the returned format.
@@ -384,7 +393,7 @@ extern "C" {
     /// <hr />
     /// Since: API 28
     #[cfg(feature = "api28")]
-    fn AMediaCodec_getName(codec: *mut AMediaCodec, out_name: *mut *mut c_char) -> isize;
+    fn AMediaCodec_getName(codec: *mut AMediaCodec, out_name: *mut *mut c_char) -> MediaStatus;
 
     /// Free the memory pointed to by name which is returned by AMediaCodec_getName.
     /// <hr />
@@ -417,7 +426,7 @@ extern "C" {
     /// <hr />
     /// Since: API 28.
     #[cfg(feature = "api28")]
-    fn AMediaCodec_releaseCrypto(codec: *mut AMediaCodec) -> isize;
+    fn AMediaCodec_releaseCrypto(codec: *mut AMediaCodec) -> MediaStatus;
 
     /// Call this after `AMediaCodec_configure` returns successfully to get the input format accepted by the codec. Do this to determine what optional configuration parameters were supported by the codec.
     ///
@@ -452,7 +461,7 @@ extern "C" {
     ) -> *mut AMediaCodecCryptoInfo;
 
     /// Since: API 21
-    fn AMediaCodecCryptoInfo_delete(info: *mut AMediaCodecCryptoInfo) -> isize;
+    fn AMediaCodecCryptoInfo_delete(info: *mut AMediaCodecCryptoInfo) -> MediaStatus;
 
     /// Since: API 21
     fn AMediaCodecCryptoInfo_setPattern(
@@ -488,6 +497,7 @@ extern "C" {
 
 /// This represents a buffer returned by mediacodec's input
 /// This buffer should be filled with input data depending on whether the codec is an encoder or decoder
+#[derive(Debug)]
 pub struct CodecInputBuffer<'a> {
     pub(crate) _marker: PhantomData<&'a (*mut u8, core::marker::PhantomPinned)>,
     pub(crate) buffer: *mut u8,
@@ -581,6 +591,7 @@ unsafe impl Sync for CodecInputBuffer<'_> {}
 /// For decoders, this is a raw frame.
 ///
 /// For encoders, this is an encoded packet
+#[derive(Debug)]
 pub struct CodecOutputBuffer<'a> {
     _marker: PhantomData<&'a (*mut u8, core::marker::PhantomPinned)>,
     codec: *mut AMediaCodec,
@@ -844,14 +855,9 @@ impl<'a> MediaCodec<'a> {
                 null_mut()
             };
 
-            MediaStatus::make_result(AMediaCodec_configure(
-                self.inner,
-                format.inner,
-                surface,
-                null_mut(),
-                flags,
-            ))
-            .map(|_value| ())
+            AMediaCodec_configure(self.inner, format.inner, surface, null_mut(), flags)
+                .result()
+                .map(|_value| ())
         }
     }
 
@@ -859,21 +865,21 @@ impl<'a> MediaCodec<'a> {
     ///
     /// This must be called only after the codec has been initialized
     pub fn start(&mut self) -> Result<(), MediaStatus> {
-        unsafe { MediaStatus::make_result(AMediaCodec_start(self.inner)).map(|_value| ()) }
+        unsafe { AMediaCodec_start(self.inner).result().map(|_value| ()) }
     }
 
     /// **WARNING**
     ///
     /// Make sure you have released all pending buffers before calling this function
     pub fn stop(&mut self) -> Result<(), MediaStatus> {
-        unsafe { MediaStatus::make_result(AMediaCodec_stop(self.inner)).map(|_| ()) }
+        unsafe { AMediaCodec_stop(self.inner).result().map(|_| ()) }
     }
 
     /// **WARNING**
     ///
     /// Make sure you have released all pending buffers before calling this function
     pub fn flush(&mut self) -> Result<(), MediaStatus> {
-        unsafe { MediaStatus::make_result(AMediaCodec_flush(self.inner)).map(|_| ()) }
+        unsafe { AMediaCodec_flush(self.inner).result().map(|_| ()) }
     }
 
     /// Returns the output format of this codec (if we can find one)

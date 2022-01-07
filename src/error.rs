@@ -80,6 +80,14 @@ impl MediaStatus {
         Ok(value)
     }
 
+    pub fn result(&self) -> Result<isize, Self> {
+        if self.is_ok() {
+            return Ok(*self as isize);
+        }
+
+        Err(*self)
+    }
+
     fn is_ok(&self) -> bool {
         let mut valuez = Self::values();
         // Remove the Ok. Now, the rest are errors

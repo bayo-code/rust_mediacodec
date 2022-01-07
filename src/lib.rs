@@ -118,6 +118,7 @@ mod crypto;
 mod error;
 mod extractor;
 mod format;
+mod muxer;
 mod native_window;
 mod samples;
 
@@ -126,5 +127,6 @@ pub use crypto::*;
 pub use error::*;
 pub use extractor::*;
 pub use format::*;
+pub use muxer::*;
 pub use native_window::*;
 pub use samples::*;

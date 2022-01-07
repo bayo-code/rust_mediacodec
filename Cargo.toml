@@ -3,10 +3,13 @@ name = "mediacodec"
 version = "0.1.0"
 edition = "2021"
 readme = "README.md"
+authors = [
+    "Adebayo Jagunmolu <hardebahyho@gmail.com>"
+]
 description = "Rust bindings to MediaCodec, with an easy-to-use API"
 repository = "https://github.com/hardebayho/rust_mediacodec"
 license = "MIT"
-keywords = ["bindings", "multimedia", "mediacodec", "codec", "android"]
+keywords = ["ffi", "bindings", "multimedia", "codec", "android"]
 categories = ["api-bindings", "encoding", "multimedia", "multimedia::audio", "multimedia::video"]
 
 
@@ -24,7 +27,7 @@ crate-type = ["cdylib"]
 name = "decoding"
 crate-type = ["cdylib"]
 
-[dependencies]
+[target.'cfg(target_os = "android")'.dependencies]
 log = "0.4.14"
 android_log = "0.1.3"
 jni = "0.19.0"
@@ -42,18 +45,27 @@ api28 = ["api26"]
 api29 = ["api28"]
 
 # For cargo apk to test the library
-[package.metadata.android.sdk]
-min_sdk_version = 21
-target_sdk_version = 31
+# [package.metadata.android.sdk]
+# min_sdk_version = 21
+# target_sdk_version = 31
 
-[package.metadata.android]
-build_targets = [ "armv7-linux-androideabi" ]
+# [package.metadata.android]
+# build_targets = [ "armv7-linux-androideabi" ]
 
-[[package.metadata.android.uses_permission]]
-name = "android.permission.READ_EXTERNAL_STORAGE"
+# [[package.metadata.android.uses_permission]]
+# name = "android.permission.READ_EXTERNAL_STORAGE"
 
-[[package.metadata.android.uses_permission]]
-name = "android.permission.INTERNET"
+# [[package.metadata.android.uses_permission]]
+# name = "android.permission.INTERNET"
 
-[target.'cfg(target_os = "android")'.dependencies]
-ndk-glue = { version = "*", features = ["logger"] }
+# [target.'cfg(target_os = "android")'.dependencies]
+# ndk-glue = { version = "*", features = ["logger"] }
+
+[package.metadata.docs.rs]
+features = ["api28"]
+targets = [
+    "aarch64-linux-android",
+    "armv7-linux-androideabi",
+    "i686-linux-android",
+    "x86_64-linux-android",
+]

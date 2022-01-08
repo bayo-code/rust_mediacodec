@@ -1,5 +1,13 @@
 # Rust MediaCodec
-This library provides Rust bindings to the Android MediaCodec APIs. It also adds some pretty nifty utilities to make working with buffers on Android easier. Everything is still WIP at the moment, but development is going at a fast pace! Soon, it'll be ready for launch and will be published on [crates.io](https://crates.io)
+This library provides Rust bindings to the Android MediaCodec APIs. It also adds some pretty nifty utilities to make working with buffers on Android easier.
+
+## Features Currently Implemented
+- [x] MediaCodec
+- [x] MediaExtractor
+- [x] MediaMuxer
+- [x] MediaFormat
+- [x] Safe codec buffers abstraction
+- [x] Some extra utilities to make working with the library easier
 
 Some Decoding example:
 

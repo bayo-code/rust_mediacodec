@@ -7,7 +7,7 @@ authors = [
     "Adebayo Jagunmolu <hardebahyho@gmail.com>"
 ]
 description = "Rust bindings to MediaCodec, with an easy-to-use API"
-repository = "https://github.com/hardebayho/rust_mediacodec"
+repository = "https://github.com/bayo-code/rust_mediacodec"
 license = "MIT"
 keywords = ["ffi", "bindings", "multimedia", "codec", "android"]
 categories = ["api-bindings", "encoding", "multimedia", "multimedia::audio", "multimedia::video"]
